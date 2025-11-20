@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../css/index.css';
+import Spinner from '../components/Spinner';
 
 const logoImg = '/img/Logo container.svg';
 const slide1BoyImg = '/img/1_slide_boy.png';
@@ -19,36 +20,99 @@ function HomePage() {
   const carouselInstanceRef = useRef(null);
   const touchStartXRef = useRef(0);
   const touchEndXRef = useRef(0);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Эффект для загрузки Bootstrap и скрытия спиннера
   useEffect(() => {
-    // Загрузка Bootstrap JS
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js';
-    script.integrity = 'sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz';
-    script.crossOrigin = 'anonymous';
+    const minLoadingTime = 500; // Минимальное время показа спиннера (500мс)
+    const startTime = Date.now();
     
-    script.onload = () => {
-      // Инициализация Bootstrap Carousel после загрузки скрипта
-      if (carouselRef.current && window.bootstrap) {
-        carouselInstanceRef.current = new window.bootstrap.Carousel(carouselRef.current, {
-          interval: false,
-          wrap: false,
-          touch: true
-        });
+    const hideSpinner = () => {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, minLoadingTime - elapsed);
+      setTimeout(() => setIsLoading(false), remaining);
+    };
+
+    // Проверяем, загружен ли Bootstrap
+    if (window.bootstrap && window.bootstrap.Carousel) {
+      // Если Bootstrap уже загружен, показываем спиннер минимум minLoadingTime
+      hideSpinner();
+    } else {
+      // Проверяем, не добавлен ли уже скрипт
+      const existingScript = document.querySelector('script[src*="bootstrap.bundle.min.js"]');
+      
+      if (existingScript) {
+        // Если скрипт уже есть, проверяем Bootstrap периодически
+        const checkInterval = setInterval(() => {
+          if (window.bootstrap && window.bootstrap.Carousel) {
+            clearInterval(checkInterval);
+            hideSpinner();
+          }
+        }, 50);
+        
+        // Таймаут на случай, если скрипт не загрузится
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          hideSpinner();
+        }, 3000);
+      } else {
+        // Загружаем Bootstrap JS
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js';
+        script.integrity = 'sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz';
+        script.crossOrigin = 'anonymous';
+        
+        script.onload = () => {
+          hideSpinner();
+        };
+
+        script.onerror = () => {
+          console.error('Ошибка загрузки Bootstrap');
+          hideSpinner();
+        };
+
+        document.body.appendChild(script);
+      }
+    }
+  }, []);
+
+  // Эффект для инициализации карусели после того, как компонент отрендерился
+  useEffect(() => {
+    if (isLoading) return; // Не инициализируем, пока идет загрузка
+
+    const initCarousel = () => {
+      if (carouselRef.current && window.bootstrap && window.bootstrap.Carousel) {
+        try {
+          // Уничтожаем предыдущий экземпляр, если он есть
+          if (carouselInstanceRef.current) {
+            carouselInstanceRef.current.dispose();
+          }
+          
+          carouselInstanceRef.current = new window.bootstrap.Carousel(carouselRef.current, {
+            interval: false,
+            wrap: false,
+            touch: true
+          });
+        } catch (error) {
+          console.error('Ошибка инициализации карусели:', error);
+        }
       }
     };
 
-    document.body.appendChild(script);
+    // Небольшая задержка для гарантии, что DOM готов
+    const timer = setTimeout(initCarousel, 100);
 
     return () => {
+      clearTimeout(timer);
       if (carouselInstanceRef.current) {
-        carouselInstanceRef.current.dispose();
-      }
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
+        try {
+          carouselInstanceRef.current.dispose();
+        } catch (error) {
+          console.error('Ошибка при очистке карусели:', error);
+        }
       }
     };
-  }, []);
+  }, [isLoading]);
 
   // Обработчик начала касания
   const handleTouchStart = (e) => {
@@ -97,6 +161,10 @@ function HomePage() {
   const handleGoToAgents = () => {
     navigate('/agents_list');
   };
+
+  if (isLoading) {
+    return <Spinner />;
+  }
 
   return (
     <div className="homePage">

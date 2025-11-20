@@ -1,12 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../css/modules/AgentMarkPage.module.css';
+import Spinner from '../components/Spinner';
+import { usePageLoader } from '../hooks/usePageLoader';
 const backArrowImg = '/img/Rectangle 42215.svg';
 const settingIconImg = '/img/setting_icon.svg';
 const markImg = '/img/Mark.png';
 
 function AgentMarkPage() {
   const navigate = useNavigate();
+  const isLoading = usePageLoader(500);
 
   const handleBackClick = (e) => {
     e.preventDefault();
@@ -19,8 +22,12 @@ function AgentMarkPage() {
   };
 
   const handleStartClick = () => {
-    navigate('/chat');
+    navigate('/chat', { state: { agent: 'mark', agentName: 'МАРК' } });
   };
+
+  if (isLoading) {
+    return <Spinner />;
+  }
 
   return (
     <div className={`${styles.body} ${styles.agentMarkPage}`}>

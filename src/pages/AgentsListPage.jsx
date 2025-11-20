@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../css/modules/AgentsListPage.module.css';
+import Spinner from '../components/Spinner';
+import { usePageLoader } from '../hooks/usePageLoader';
 const logoImg = '/img/Logo container.svg';
 const settingIconImg = '/img/setting_icon.svg';
 const infoIconImg = '/img/Info icon.svg';
@@ -12,6 +14,7 @@ const arrowImg = '/img/Rectangle 42213.svg';
 
 function AgentsListPage() {
   const navigate = useNavigate();
+  const isLoading = usePageLoader(500);
 
   const handleLogoClick = (e) => {
     e.preventDefault();
@@ -27,6 +30,10 @@ function AgentsListPage() {
     e.preventDefault();
     navigate(agentPath);
   };
+
+  if (isLoading) {
+    return <Spinner />;
+  }
 
   return (
     <div className={`${styles.body} ${styles.agentsListPage}`}>

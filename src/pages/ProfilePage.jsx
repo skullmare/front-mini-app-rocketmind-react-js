@@ -1,12 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../css/modules/ProfilePage.module.css';
+import Spinner from '../components/Spinner';
+import { usePageLoader } from '../hooks/usePageLoader';
 const backArrowImg = '/img/Rectangle 42215.svg';
 const settingIconImg = '/img/setting_icon.svg';
 const personImg = '/img/person.svg';
 
 function ProfilePage() {
   const navigate = useNavigate();
+  const isLoading = usePageLoader(500);
 
   const handleBackClick = (e) => {
     e.preventDefault();
@@ -17,6 +20,10 @@ function ProfilePage() {
     e.preventDefault();
     navigate('/tariff');
   };
+
+  if (isLoading) {
+    return <Spinner />;
+  }
 
   return (
     <div className={`${styles.body} ${styles.profilePage}`}>
