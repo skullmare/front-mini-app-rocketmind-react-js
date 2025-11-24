@@ -6,7 +6,16 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:80"
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - BOT_TOKEN=8558968621:AAGGhZTBDGuGcMhkoNC234qLG3XnZb2Le7A
+      - JWT_SECRET=90139791492bc815bbefde539ab9d8bbecfdfbc0d97efae22beb158f811a28ea
+      - CLIENT_ORIGIN=https://rocketmind-app-ivanostapchuk.amvera.io
+      - AUTH_MAX_AGE_SECONDS=300
     container_name: mini-app-react
     restart: unless-stopped
+
+
 

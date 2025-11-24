@@ -25,3 +25,5 @@ export const usePageLoader = (minLoadingTime = 500) => {
   return isLoading;
 };
 
+
+

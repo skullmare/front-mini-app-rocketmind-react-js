@@ -1,40 +1,43 @@
-# Stage 1: Build
-FROM node:18-alpine AS builder
+# Stage 1: build client bundle
+FROM node:18-alpine AS client-builder
 
 WORKDIR /app
 
-# Копируем файлы зависимостей
 COPY package.json package-lock.json ./
-
-# Устанавливаем зависимости
 RUN npm ci
 
-# Копируем исходный код
-COPY . .
+COPY src ./src
+COPY public ./public
+COPY vite.config.js ./
+COPY index.html ./
 
-# Собираем приложение
 RUN npm run build
 
-# Stage 2: Production
-FROM nginx:alpine
+# Stage 2: install server dependencies
+FROM node:18-alpine AS server-builder
 
-# Копируем собранное приложение в nginx
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Копируем конфигурацию nginx для SPA (чтобы роутинг работал)
-RUN echo 'server { \
-    listen 80; \
-    server_name _; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+COPY server/package.json server/package-lock.json ./server/
+RUN cd server && npm ci --omit=dev
 
-# Открываем порт
-EXPOSE 80
+COPY server ./server
+COPY --from=client-builder /app/dist ./dist
 
-# Запускаем nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Stage 3: production runtime
+FROM node:18-alpine
+
+ENV NODE_ENV=production
+ENV PORT=4000
+
+WORKDIR /app/server
+
+COPY --from=server-builder /app/server ./
+COPY --from=server-builder /app/dist ../dist
+
+EXPOSE 4000
+
+CMD ["node", "src/index.js"]
+
+
 
